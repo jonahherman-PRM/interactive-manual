@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Device Manual</title>
+        <title>Interactive Device Manual</title>
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; background: #f4f4f9; margin: 0; }
         #app-container { width: 100%; max-width: 500px; background: white; min-height: 100vh; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
@@ -73,16 +74,17 @@
         // Use Grid for multi-choice (3-4 buttons), Column for single/double
         btnGroup.className = step.screen_type === 'multi_choice' ? 'grid-layout' : 'button-container';
 
-        // Loop through all 4 possible buttons
-        for (let i = 1; i <= 4; i++) {
-            let text = step[`btn${i}_text`];
-            let nextId = step[`btn${i}_next_id`];
-            
-            // Only show the button if BOTH text and a destination ID exist
-            if (text && nextId) {
-                addButton(text, nextId, id);
-            }
-        }
+        // Loop through all 8 possible buttons
+for (let i = 1; i <= 8; i++) {
+    let text = step[`btn${i}_text`];
+    let nextId = step[`btn${i}_next_id`];
+    let icon = step[`btn${i}_image` || `btn${i}_icon` ]; // Checks for your image column
+    
+    // Only show the button if BOTH text and a destination ID exist
+    if (text && nextId) {
+        addButton(text, nextId, id, icon);
+    }
+}
 
         // Handle Back Button Visibility
         const backBtn = document.getElementById('back-btn');
@@ -93,14 +95,33 @@
         };
     }
 
-    function addButton(text, nextId, currentId) {
-        const btn = document.createElement('button');
-        btn.innerText = text;
-        btn.onclick = () => {
-            historyStack.push(currentId); // Save where we are before moving
-            renderStep(nextId);
-        };
-        document.getElementById('button-group').appendChild(btn);
+    function addButton(text, nextId, currentId, iconPath) {
+    const btn = document.createElement('button');
+    btn.style.display = "flex";
+    btn.style.flexDirection = "column";
+    btn.style.alignItems = "center";
+    btn.style.gap = "10px";
+
+    // If an image path exists for this button, add the icon
+    if (iconPath) {
+        const img = document.createElement('img');
+        img.src = iconPath;
+        img.style.width = "40px"; // Adjust icon size here
+        img.style.height = "40px";
+        img.style.objectFit = "contain";
+        btn.appendChild(img);
+    }
+
+    const label = document.createElement('span');
+    label.innerText = text;
+    btn.appendChild(label);
+
+    btn.onclick = () => {
+        historyStack.push(currentId);
+        renderStep(nextId);
+    };
+    document.getElementById('button-group').appendChild(btn);
+}
     }
 </script>
 
