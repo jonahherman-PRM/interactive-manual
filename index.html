@@ -1,23 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Device Manual</title>
-        <title>Interactive Device Manual</title>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G20116GB0M"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-G20116GB0M');
+    </script>
+
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; background: #f4f4f9; margin: 0; }
-        #app-container { width: 100%; max-width: 500px; background: white; min-height: 100vh; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        #app-container { width: 100%; max-width: 500px; background: white; min-height: 100vh; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); box-sizing: border-box; }
+        
         .media-box { width: 100%; height: 250px; background: #ddd; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .media-box img { width: 100%; height: 100%; object-fit: cover; }
-        h1 { font-size: 1.5rem; margin-bottom: 10px; }
-        p { color: #555; line-height: 1.6; white-space: pre-wrap; }
-        .button-container { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        button { padding: 15px; border: none; border-radius: 5px; background: #007bff; color: white; font-size: 1rem; cursor: pointer; transition: 0.2s; min-height: 80px; /* Ensures buttons don't shrink if text is short */
-    width: 100%;      /* Makes them fill their grid slot evenly */}
+        
+        h1 { font-size: 1.5rem; margin-bottom: 10px; color: #333; }
+        p { color: #555; line-height: 1.6; white-space: pre-wrap; margin-bottom: 20px; }
+        
+        /* Layout logic for 1-2 buttons */
+        .button-container { display: flex; flex-direction: column; gap: 12px; }
+        /* Layout logic for 3-8 buttons */
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        
+        button { 
+            padding: 15px; border: none; border-radius: 8px; background: #007bff; color: white; 
+            font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; 
+            flex-direction: column; align-items: center; justify-content: center; text-align: center; 
+            min-height: 80px; width: 100%;
+        }
+        
         button:hover { background: #0056b3; }
-        .secondary-btn { background: #6c757d; }
-        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button:active { transform: scale(0.98); }
+        button img { width: 32px; height: 32px; margin-bottom: 8px; object-fit: contain; }
+        
+        .secondary-btn { background: #6c757d; width: 100%; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -27,8 +48,8 @@
         <div class="media-box" id="media-container">Media Placeholder</div>
         <h1 id="step-title">Loading...</h1>
         <p id="step-text">Please wait while we load the instructions.</p>
-        <div id="button-group" class="button-container"></div>
-        <button id="back-btn" class="secondary-btn" style="margin-top: 20px; display: none;">← Back</button>
+        <div id="button-group"></div>
+        <button id="back-btn" class="secondary-btn" style="display: none;">← Back</button>
     </div>
 </div>
 
@@ -36,93 +57,72 @@
     let manualData = [];
     let historyStack = [];
 
-    // Fetch the data with a "Cache Buster" to ensure edits show up instantly
     fetch('./data/manual_data.json?v=' + new Date().getTime())
         .then(response => response.json())
         .then(data => {
             manualData = data;
-            // Only start if we actually have data
-            if(manualData.length > 0) {
-                renderStep(manualData[0].step_id);
-            }
+            if(manualData.length > 0) renderStep(manualData[0].step_id);
         })
         .catch(err => {
-            document.getElementById('step-title').innerText = "Error Loading Data";
-            document.getElementById('step-text').innerText = "Check if the repository is Public and the file exists.";
+            document.getElementById('step-title').innerText = "Data Not Found";
+            console.error(err);
         });
 
     function renderStep(id) {
-        // Find the step (using String comparison to avoid number/text mismatches)
         const step = manualData.find(s => String(s.step_id) === String(id));
-        
-        if (!step) {
-            console.error("Step not found:", id);
-            return;
-        }
+        if (!step) return;
 
-        // Update Text
-        document.getElementById('step-title').innerText = step.title || "Instruction Step";
+        document.getElementById('step-title').innerText = step.title || "Step";
         document.getElementById('step-text').innerText = step.instruction_body || "";
-
-        // Update Media
+        
         const mediaBox = document.getElementById('media-container');
-        mediaBox.innerHTML = step.primary_media ? `<img src="${step.primary_media}">` : 'Video Placeholder';
+        mediaBox.innerHTML = step.primary_media ? `<img src="${step.primary_media}">` : 'Visual Placeholder';
 
-        // Clear and Build Buttons
         const btnGroup = document.getElementById('button-group');
         btnGroup.innerHTML = '';
         
-        // Use Grid for multi-choice (3-4 buttons), Column for single/double
-        btnGroup.className = step.screen_type === 'multi_choice' ? 'grid-layout' : 'button-container';
+        // Use grid for multi_choice steps
+        btnGroup.className = (step.screen_type === 'multi_choice') ? 'grid-layout' : 'button-container';
 
-        // Loop through all 8 possible buttons
-for (let i = 1; i <= 8; i++) {
-    let text = step[`btn${i}_text`];
-    let nextId = step[`btn${i}_next_id`];
-    let icon = step[`btn${i}_image` || `btn${i}_icon` ]; // Checks for your image column
-    
-    // Only show the button if BOTH text and a destination ID exist
-    if (text && nextId) {
-        addButton(text, nextId, id, icon);
-    }
-}
+        // Support up to 8 buttons
+        for (let i = 1; i <= 8; i++) {
+            let text = step[`btn${i}_text`];
+            let nextId = step[`btn${i}_next_id`];
+            let icon = step[`btn${i}_image`];
+            if (text && nextId) addButton(text, nextId, id, icon);
+        }
 
-        // Handle Back Button Visibility
         const backBtn = document.getElementById('back-btn');
         backBtn.style.display = historyStack.length > 0 ? 'block' : 'none';
         backBtn.onclick = () => {
-            const lastId = historyStack.pop();
-            renderStep(lastId);
+            renderStep(historyStack.pop());
         };
     }
 
     function addButton(text, nextId, currentId, iconPath) {
-    const btn = document.createElement('button');
-    btn.style.display = "flex";
-    btn.style.flexDirection = "column";
-    btn.style.alignItems = "center";
-    btn.style.gap = "10px";
+        const btn = document.createElement('button');
+        if (iconPath) {
+            const img = document.createElement('img');
+            img.src = iconPath;
+            btn.appendChild(img);
+        }
+        const span = document.createElement('span');
+        span.innerText = text;
+        btn.appendChild(span);
 
-    // If an image path exists for this button, add the icon
-    if (iconPath) {
-        const img = document.createElement('img');
-        img.src = iconPath;
-        img.style.width = "40px"; // Adjust icon size here
-        img.style.height = "40px";
-        img.style.objectFit = "contain";
-        btn.appendChild(img);
+        btn.onclick = () => {
+            // 2. LOG NAVIGATION EVENT TO GOOGLE ANALYTICS
+            gtag('event', 'manual_navigation', {
+                'from_step': currentId,
+                'to_step': nextId,
+                'button_label': text
+            });
+
+            historyStack.push(currentId);
+            renderStep(nextId);
+        };
+        document.getElementById('button-group').appendChild(btn);
     }
-
-    const label = document.createElement('span');
-    label.innerText = text;
-    btn.appendChild(label);
-
-    btn.onclick = () => {
-        historyStack.push(currentId);
-        renderStep(nextId);
-    };
-    document.getElementById('button-group').appendChild(btn);
-}
 </script>
 
 </body>
