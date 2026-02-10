@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Device Manual</title>
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-G20116GB0M"></script>
@@ -15,29 +16,21 @@
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; background: #f4f4f9; margin: 0; }
         #app-container { width: 100%; max-width: 500px; background: white; min-height: 100vh; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); box-sizing: border-box; }
-        
         .media-box { width: 100%; height: 250px; background: #ddd; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .media-box img { width: 100%; height: 100%; object-fit: cover; }
-        
         h1 { font-size: 1.5rem; margin-bottom: 10px; color: #333; }
         p { color: #555; line-height: 1.6; white-space: pre-wrap; margin-bottom: 20px; }
-        
-        /* Layout logic for 1-2 buttons */
         .button-container { display: flex; flex-direction: column; gap: 12px; }
-        /* Layout logic for 3-8 buttons */
         .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        
         button { 
             padding: 15px; border: none; border-radius: 8px; background: #007bff; color: white; 
             font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; 
             flex-direction: column; align-items: center; justify-content: center; text-align: center; 
             min-height: 80px; width: 100%;
         }
-        
         button:hover { background: #0056b3; }
         button:active { transform: scale(0.98); }
         button img { width: 32px; height: 32px; margin-bottom: 8px; object-fit: contain; }
-        
         .secondary-btn { background: #6c757d; width: 100%; margin-top: 20px; }
     </style>
 </head>
@@ -56,6 +49,7 @@
 <script>
     let manualData = [];
     let historyStack = [];
+    let stepStartTime = Date.now(); // Start the timer immediately
 
     fetch('./data/manual_data.json?v=' + new Date().getTime())
         .then(response => response.json())
@@ -72,6 +66,9 @@
         const step = manualData.find(s => String(s.step_id) === String(id));
         if (!step) return;
 
+        // Reset the timer for the NEW step
+        stepStartTime = Date.now();
+
         document.getElementById('step-title').innerText = step.title || "Step";
         document.getElementById('step-text').innerText = step.instruction_body || "";
         
@@ -80,11 +77,8 @@
 
         const btnGroup = document.getElementById('button-group');
         btnGroup.innerHTML = '';
-        
-        // Use grid for multi_choice steps
         btnGroup.className = (step.screen_type === 'multi_choice') ? 'grid-layout' : 'button-container';
 
-        // Support up to 8 buttons
         for (let i = 1; i <= 8; i++) {
             let text = step[`btn${i}_text`];
             let nextId = step[`btn${i}_next_id`];
@@ -111,11 +105,15 @@
         btn.appendChild(span);
 
         btn.onclick = () => {
-            // 2. LOG NAVIGATION EVENT TO GOOGLE ANALYTICS
+            // Calculate how long they spent on the CURRENT step before moving
+            const duration = Math.round((Date.now() - stepStartTime) / 1000);
+
+            // LOG NAVIGATION EVENT
             gtag('event', 'manual_navigation', {
                 'from_step': currentId,
                 'to_step': nextId,
-                'button_label': text
+                'button_label': text,
+                'seconds_spent': duration // This tells you which steps are too long/complex
             });
 
             historyStack.push(currentId);
