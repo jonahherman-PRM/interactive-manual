@@ -10,7 +10,7 @@
         .media-box { width: 100%; height: 250px; background: #ddd; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .media-box img { width: 100%; height: 100%; object-fit: cover; }
         h1 { font-size: 1.5rem; margin-bottom: 10px; }
-        p { color: #555; line-height: 1.6; }
+        p { color: #555; line-height: 1.6; white-space: pre-wrap; }
         .button-container { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         button { padding: 15px; border: none; border-radius: 5px; background: #007bff; color: white; font-size: 1rem; cursor: pointer; transition: 0.2s; }
         button:hover { background: #0056b3; }
@@ -34,42 +34,57 @@
     let manualData = [];
     let historyStack = [];
 
-    // 1. Fetch the data from your GitHub folder
-    fetch('data/manual_data.json?v=' + new Date().getTime())
+    // Fetch the data with a "Cache Buster" to ensure edits show up instantly
+    fetch('./data/manual_data.json?v=' + new Date().getTime())
         .then(response => response.json())
         .then(data => {
             manualData = data;
-            renderStep(manualData[0].step_id); // Start with the first row
+            // Only start if we actually have data
+            if(manualData.length > 0) {
+                renderStep(manualData[0].step_id);
+            }
+        })
+        .catch(err => {
+            document.getElementById('step-title').innerText = "Error Loading Data";
+            document.getElementById('step-text').innerText = "Check if the repository is Public and the file exists.";
         });
 
     function renderStep(id) {
-        const step = manualData.find(s => s.step_id == id);
-        if (!step) return;
+        // Find the step (using String comparison to avoid number/text mismatches)
+        const step = manualData.find(s => String(s.step_id) === String(id));
+        
+        if (!step) {
+            console.error("Step not found:", id);
+            return;
+        }
 
         // Update Text
-        document.getElementById('step-title').innerText = step.title;
-        document.getElementById('step-text').innerText = step.instruction_body;
+        document.getElementById('step-title').innerText = step.title || "Instruction Step";
+        document.getElementById('step-text').innerText = step.instruction_body || "";
 
-        // Update Media (Video or Image)
+        // Update Media
         const mediaBox = document.getElementById('media-container');
         mediaBox.innerHTML = step.primary_media ? `<img src="${step.primary_media}">` : 'Video Placeholder';
 
         // Clear and Build Buttons
         const btnGroup = document.getElementById('button-group');
         btnGroup.innerHTML = '';
+        
+        // Use Grid for multi-choice (3-4 buttons), Column for single/double
         btnGroup.className = step.screen_type === 'multi_choice' ? 'grid-layout' : 'button-container';
 
-        // Logic for Button 1
-        if (step.btn1_text) {
-            addButton(step.btn1_text, step.btn1_next_id);
-        }
-        
-        // Logic for Button 2 (if it exists)
-        if (step.btn2_text) {
-            addButton(step.btn2_text, step.btn2_next_id);
+        // Loop through all 4 possible buttons
+        for (let i = 1; i <= 4; i++) {
+            let text = step[`btn${i}_text`];
+            let nextId = step[`btn${i}_next_id`];
+            
+            // Only show the button if BOTH text and a destination ID exist
+            if (text && nextId) {
+                addButton(text, nextId, id);
+            }
         }
 
-        // Show/Hide Back Button
+        // Handle Back Button Visibility
         const backBtn = document.getElementById('back-btn');
         backBtn.style.display = historyStack.length > 0 ? 'block' : 'none';
         backBtn.onclick = () => {
@@ -78,21 +93,14 @@
         };
     }
 
-    function addButton(text, nextId) {
-    const btn = document.createElement('button');
-    btn.innerText = text;
-    btn.onclick = () => {
-        // 1. Find the ID of the step the user is looking at RIGHT NOW
-        const currentId = manualData.find(s => s.title === document.getElementById('step-title').innerText).step_id;
-        
-        // 2. Add it to the history list
-        historyStack.push(currentId);
-        
-        // 3. Move to the next step
-        renderStep(nextId);
-    };
-    document.getElementById('button-group').appendChild(btn);
-}
+    function addButton(text, nextId, currentId) {
+        const btn = document.createElement('button');
+        btn.innerText = text;
+        btn.onclick = () => {
+            historyStack.push(currentId); // Save where we are before moving
+            renderStep(nextId);
+        };
+        document.getElementById('button-group').appendChild(btn);
     }
 </script>
 
