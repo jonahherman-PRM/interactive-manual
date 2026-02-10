@@ -79,15 +79,20 @@
     }
 
     function addButton(text, nextId) {
-        const btn = document.createElement('button');
-        btn.innerText = text;
-        btn.onclick = () => {
-            // Push current ID to history before moving
-            const currentId = manualData.find(s => s.title === document.getElementById('step-title').innerText).step_id;
-            historyStack.push(currentId);
-            renderStep(nextId);
-        };
-        document.getElementById('button-group').appendChild(btn);
+    const btn = document.createElement('button');
+    btn.innerText = text;
+    btn.onclick = () => {
+        // 1. Find the ID of the step the user is looking at RIGHT NOW
+        const currentId = manualData.find(s => s.title === document.getElementById('step-title').innerText).step_id;
+        
+        // 2. Add it to the history list
+        historyStack.push(currentId);
+        
+        // 3. Move to the next step
+        renderStep(nextId);
+    };
+    document.getElementById('button-group').appendChild(btn);
+}
     }
 </script>
 
