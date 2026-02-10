@@ -41,7 +41,7 @@
     "btn1_next_id": 1001,
     "btn1_image": "",
     "btn2_text": "Using the device",
-    "btn2_next_id": "",
+    "btn2_next_id": 1008,
     "btn2_image": "",
     "btn3_text": "Troubleshooting",
     "btn3_next_id": "",
