@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Device Manual</title>
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-G20116GB0M"></script>
@@ -14,8 +13,8 @@
     </script>
 
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; background: #f4f4f9; margin: 0; }
-        #app-container { width: 100%; max-width: 500px; background: white; min-height: 100vh; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); box-sizing: border-box; }
+        body { font-family: sans-serif; display: flex; justify-content: center; background: #f4f4f9; margin: 0; padding: 10px; }
+        #app-container { width: 100%; max-width: 500px; background: white; min-height: 100vh; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); box-sizing: border-box; border-radius: 8px; }
         .media-box { width: 100%; height: 250px; background: #ddd; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .media-box img { width: 100%; height: 100%; object-fit: cover; }
         h1 { font-size: 1.5rem; margin-bottom: 10px; color: #333; }
@@ -26,12 +25,12 @@
             padding: 15px; border: none; border-radius: 8px; background: #007bff; color: white; 
             font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; 
             flex-direction: column; align-items: center; justify-content: center; text-align: center; 
-            min-height: 80px; width: 100%;
+            min-height: 80px; width: 100%; font-weight: 500;
         }
         button:hover { background: #0056b3; }
         button:active { transform: scale(0.98); }
         button img { width: 32px; height: 32px; margin-bottom: 8px; object-fit: contain; }
-        .secondary-btn { background: #6c757d; width: 100%; margin-top: 20px; }
+        .secondary-btn { background: #6c757d; width: 100%; margin-top: 20px; min-height: 50px; }
     </style>
 </head>
 <body>
@@ -49,7 +48,8 @@
 <script>
     let manualData = [];
     let historyStack = [];
-    let stepStartTime = Date.now(); // Start the timer immediately
+    let stepStartTime = Date.now();
+    let sessionStartTime = Date.now();
 
     fetch('./data/manual_data.json?v=' + new Date().getTime())
         .then(response => response.json())
@@ -66,9 +66,7 @@
         const step = manualData.find(s => String(s.step_id) === String(id));
         if (!step) return;
 
-        // Reset the timer for the NEW step
         stepStartTime = Date.now();
-
         document.getElementById('step-title').innerText = step.title || "Step";
         document.getElementById('step-text').innerText = step.instruction_body || "";
         
@@ -79,47 +77,55 @@
         btnGroup.innerHTML = '';
         btnGroup.className = (step.screen_type === 'multi_choice') ? 'grid-layout' : 'button-container';
 
+        // Check for session completion
+        if (step.title.includes("Complete")) {
+            gtag('event', 'manual_completion', {
+                'total_time': Math.round((Date.now() - sessionStartTime) / 1000)
+            });
+        }
+
         for (let i = 1; i <= 8; i++) {
-            let text = step[`btn${i}_text`];
-            let nextId = step[`btn${i}_next_id`];
-            let icon = step[`btn${i}_image`];
-            if (text && nextId) addButton(text, nextId, id, icon);
+            let bText = step[`btn${i}_text`];
+            let bNext = step[`btn${i}_next_id`];
+            let bIcon = step[`btn${i}_image`];
+            if (bText && bNext) addButton(bText, bNext, id, bIcon);
         }
 
         const backBtn = document.getElementById('back-btn');
         backBtn.style.display = historyStack.length > 0 ? 'block' : 'none';
-        backBtn.onclick = () => {
-            renderStep(historyStack.pop());
-        };
+        backBtn.onclick = () => renderStep(historyStack.pop());
     }
 
     function addButton(text, nextId, currentId, iconPath) {
-    const btn = document.createElement('button');
-    // ... (keep your existing button styling/icon code here)
-
-    btn.onclick = () => {
-        // 1. Grab the actual title from the screen right now
-        const currentTitle = document.getElementById('step-title').innerText;
+        const btn = document.createElement('button');
         
-        // 2. Find the title of the step we are going TO
-        const nextStepObj = manualData.find(s => String(s.step_id) === String(nextId));
-        const nextTitle = nextStepObj ? nextStepObj.title : "Unknown Destination";
+        if (iconPath) {
+            const img = document.createElement('img');
+            img.src = iconPath;
+            btn.appendChild(img);
+        }
 
-        const duration = Math.round((Date.now() - stepStartTime) / 1000);
+        const span = document.createElement('span');
+        span.innerText = text; // This is the line that restores the title
+        btn.appendChild(span);
 
-        // 3. LOG TITLES INSTEAD OF IDs
-        gtag('event', 'manual_navigation', {
-            'from_step_title': currentTitle,
-            'to_step_title': nextTitle,
-            'button_label': text,
-            'seconds_spent': duration
-        });
+        btn.onclick = () => {
+            const currentTitle = document.getElementById('step-title').innerText;
+            const nextStepObj = manualData.find(s => String(s.step_id) === String(nextId));
+            const nextTitle = nextStepObj ? nextStepObj.title : "Unknown Step";
 
-        historyStack.push(currentId);
-        renderStep(nextId);
-    };
-    document.getElementById('button-group').appendChild(btn);
-}
+            gtag('event', 'manual_navigation', {
+                'from_step_title': currentTitle,
+                'to_step_title': nextTitle,
+                'button_label': text,
+                'seconds_spent': Math.round((Date.now() - stepStartTime) / 1000)
+            });
+
+            historyStack.push(currentId);
+            renderStep(nextId);
+        };
+        document.getElementById('button-group').appendChild(btn);
+    }
 </script>
 
 </body>
