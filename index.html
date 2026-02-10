@@ -94,33 +94,32 @@
     }
 
     function addButton(text, nextId, currentId, iconPath) {
-        const btn = document.createElement('button');
-        if (iconPath) {
-            const img = document.createElement('img');
-            img.src = iconPath;
-            btn.appendChild(img);
-        }
-        const span = document.createElement('span');
-        span.innerText = text;
-        btn.appendChild(span);
+    const btn = document.createElement('button');
+    // ... (keep your existing button styling/icon code here)
 
-        btn.onclick = () => {
-            // Calculate how long they spent on the CURRENT step before moving
-            const duration = Math.round((Date.now() - stepStartTime) / 1000);
+    btn.onclick = () => {
+        // 1. Grab the actual title from the screen right now
+        const currentTitle = document.getElementById('step-title').innerText;
+        
+        // 2. Find the title of the step we are going TO
+        const nextStepObj = manualData.find(s => String(s.step_id) === String(nextId));
+        const nextTitle = nextStepObj ? nextStepObj.title : "Unknown Destination";
 
-            // LOG NAVIGATION EVENT
-            gtag('event', 'manual_navigation', {
-                'from_step': currentId,
-                'to_step': nextId,
-                'button_label': text,
-                'seconds_spent': duration // This tells you which steps are too long/complex
-            });
+        const duration = Math.round((Date.now() - stepStartTime) / 1000);
 
-            historyStack.push(currentId);
-            renderStep(nextId);
-        };
-        document.getElementById('button-group').appendChild(btn);
-    }
+        // 3. LOG TITLES INSTEAD OF IDs
+        gtag('event', 'manual_navigation', {
+            'from_step_title': currentTitle,
+            'to_step_title': nextTitle,
+            'button_label': text,
+            'seconds_spent': duration
+        });
+
+        historyStack.push(currentId);
+        renderStep(nextId);
+    };
+    document.getElementById('button-group').appendChild(btn);
+}
 </script>
 
 </body>
