@@ -35,7 +35,7 @@
     let historyStack = [];
 
     // 1. Fetch the data from your GitHub folder
-    fetch('data/manual_data.json')
+    fetch('data/manual_data.json?v=' + new Date().getTime())
         .then(response => response.json())
         .then(data => {
             manualData = data;
