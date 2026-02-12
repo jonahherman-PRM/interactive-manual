@@ -3,7 +3,7 @@
     "step_id": 100,
     "device_name": "General",
     "screen_type": "multi_choice",
-    "title": "Welcome to the Interactive Instruction Manual for PathRight Medical Products",
+    "title": "Interactive Instruction Manual for PathRight Medical Products",
     "instruction_body": "Please select your device from the list below.",
     "primary_media": "images/header_home_main_image.jpg",
     "special_action": "",
