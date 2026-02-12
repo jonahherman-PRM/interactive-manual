@@ -89,6 +89,10 @@
         const step = manualData.find(s => String(s.step_id) === String(id));
         if (!step) return;
         document.title = step.title || "Interactive Manual";
+        gtag('event', 'page_view', {
+        'page_title': document.title,
+        'page_location': window.location.href
+    });
 
         stepStartTime = Date.now();
         document.getElementById('step-title').innerText = step.title || "Step";
