@@ -88,6 +88,7 @@
     function renderStep(id) {
         const step = manualData.find(s => String(s.step_id) === String(id));
         if (!step) return;
+        document.title = step.title || "Interactive Manual";
 
         stepStartTime = Date.now();
         document.getElementById('step-title').innerText = step.title || "Step";
