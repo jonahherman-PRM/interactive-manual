@@ -99,19 +99,24 @@
         document.getElementById('step-text').innerText = step.instruction_body || "";
         
         const mediaBox = document.getElementById('media-container');
-        mediaBox.innerHTML = step.primary_media ? `<img src="${step.primary_media}">` : 'Visual Placeholder';
 
-        const btnGroup = document.getElementById('button-group');
-        btnGroup.innerHTML = '';
-        btnGroup.className = (step.screen_type === 'multi_choice') ? 'grid-layout' : 'button-container';
-
-        // Home Button Toggle
-        const homeBtn = document.getElementById('home-btn');
-        homeBtn.style.display = (id === manualData[0].step_id) ? 'none' : 'block';
-        homeBtn.onclick = () => {
-            historyStack = []; 
-            renderStep(manualData[0].step_id);
-        };
+if (step.youtube_id) {
+    // Show YouTube Video
+    mediaBox.innerHTML = `
+        <iframe 
+            width="100%" 
+            height="100%" 
+            src="https://www.youtube.com/embed/${step.youtube_id}?enablejsapi=1&rel=0" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+        </iframe>`;
+} else if (step.primary_media) {
+    // Show Standard Image
+    mediaBox.innerHTML = `<img src="${step.primary_media}">`;
+} else {
+    mediaBox.innerHTML = 'Visual Placeholder';
+};
 
         if (step.title.includes("Complete")) {
             gtag('event', 'manual_completion', {
