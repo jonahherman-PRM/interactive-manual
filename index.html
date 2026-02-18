@@ -88,42 +88,52 @@
     function renderStep(id) {
         const step = manualData.find(s => String(s.step_id) === String(id));
         if (!step) return;
+
+        // 1. Analytics & Title Update
         document.title = step.title || "Interactive Manual";
         gtag('event', 'page_view', {
-        'page_title': document.title,
-        'page_location': window.location.href
-    });
+            'page_title': document.title,
+            'page_location': window.location.href
+        });
 
         stepStartTime = Date.now();
         document.getElementById('step-title').innerText = step.title || "Step";
         document.getElementById('step-text').innerText = step.instruction_body || "";
         
+        // 2. Clear Existing Buttons (CRITICAL FIX)
+        const btnGroup = document.getElementById('button-group');
+        btnGroup.innerHTML = ''; 
+        btnGroup.className = (step.screen_type === 'multi_choice') ? 'grid-layout' : 'button-container';
+
+        // 3. Home Button Logic
+        const homeBtn = document.getElementById('home-btn');
+        homeBtn.style.display = (id === manualData[0].step_id) ? 'none' : 'block';
+        homeBtn.onclick = () => {
+            historyStack = []; 
+            renderStep(manualData[0].step_id);
+        };
+
+        // 4. Media Logic (YouTube/Image)
         const mediaBox = document.getElementById('media-container');
+        if (step.youtube_id) {
+            mediaBox.innerHTML = `
+                <iframe width="100%" height="100%" 
+                src="https://www.youtube.com/embed/${step.youtube_id}?enablejsapi=1&rel=0" 
+                frameborder="0" allowfullscreen></iframe>`;
+        } else if (step.primary_media) {
+            mediaBox.innerHTML = `<img src="${step.primary_media}">`;
+        } else {
+            mediaBox.innerHTML = 'Visual Placeholder';
+        }
 
-if (step.youtube_id) {
-    // Show YouTube Video
-    mediaBox.innerHTML = `
-        <iframe 
-            width="100%" 
-            height="100%" 
-            src="https://www.youtube.com/embed/${step.youtube_id}?enablejsapi=1&rel=0" 
-            frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
-        </iframe>`;
-} else if (step.primary_media) {
-    // Show Standard Image
-    mediaBox.innerHTML = `<img src="${step.primary_media}">`;
-} else {
-    mediaBox.innerHTML = 'Visual Placeholder';
-};
-
+        // 5. Completion Logic
         if (step.title.includes("Complete")) {
             gtag('event', 'manual_completion', {
                 'total_time': Math.round((Date.now() - sessionStartTime) / 1000)
             });
         }
 
+        // 6. Generate New Buttons
         for (let i = 1; i <= 8; i++) {
             let bText = step[`btn${i}_text`];
             let bNext = step[`btn${i}_next_id`];
@@ -131,6 +141,7 @@ if (step.youtube_id) {
             if (bText && bNext) addButton(bText, bNext, id, bIcon);
         }
 
+        // 7. Back Button Logic
         const backBtn = document.getElementById('back-btn');
         backBtn.style.display = historyStack.length > 0 ? 'block' : 'none';
         backBtn.onclick = () => renderStep(historyStack.pop());
