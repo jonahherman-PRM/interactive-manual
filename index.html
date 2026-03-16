@@ -31,17 +31,17 @@
         .button-container { display: flex; flex-direction: column; gap: 12px; }
         .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         button { 
-            padding: 15px; border: none; border-radius: 8px; background: #007bff; color: white; 
+            padding: 15px; border: none; border-radius: 8px; background: #0056b3; color: white; 
             font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; 
             flex-direction: column; align-items: center; justify-content: center; text-align: center; 
             min-height: 80px; width: 100%; font-weight: 500;
         }
-        button:hover { background: #0056b3; }
+        button:hover { background: #007bff; }
         button:active { transform: scale(0.98); }
         button img { width: 32px; height: 32px; margin-bottom: 8px; object-fit: contain; }
         .secondary-btn { background: #6c757d; width: 100%; margin-top: 20px; min-height: 50px; }
-        #return-btn { background: #28a745; }
-        #return-btn:hover { background: #1e7e34; }
+        #return-btn { background: #0056b3; }
+        #return-btn:hover { background: #007bff; }
     </style>
 </head>
 <body>
@@ -135,7 +135,7 @@
                 gtag('event', 'manual_navigation', {
                     'from_step_title': step.title,
                     'to_step_title': 'Video Library (return)',
-                    'button_label': 'Return to Videos',
+                    'button_label': 'Go Back',
                     'seconds_spent': Math.round((Date.now() - stepStartTime) / 1000)
                 });
                 renderStep(historyStack.pop());
