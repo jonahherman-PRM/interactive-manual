@@ -2094,8 +2094,8 @@
     "btn3_next_id": 1069,
     "btn3_image": "",
     "btn4_text": "Adjusting the Clamp Position",
-    "btn4_next_id": "",
-    "btn4_image": 1070,
+    "btn4_next_id": 1070,
+    "btn4_image": "",
     "btn5_text": "Using the RestoreX for Straight Traction",
     "btn5_next_id": 1071,
     "btn5_image": "",
@@ -2136,7 +2136,7 @@
     "btn7_text": "",
     "btn7_next_id": "",
     "btn7_image": "",
-    "youtube_id": "4UclpSCHRbE&t"
+    "youtube_id": "4UclpSCHRbE"
   },
   {
     "step_id": 1068,
