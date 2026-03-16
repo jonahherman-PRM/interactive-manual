@@ -18,52 +18,42 @@
         #app-container { width: 100%; max-width: 500px; background: white; min-height: 100vh; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); box-sizing: border-box; border-radius: 8px; }
         .media-box { width: 100%; height: 250px; background: #ddd; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .media-box img { width: 100%; height: 100%; object-fit: cover; }
+        .media-box iframe { width: 100%; height: 100%; border: none; display: block; }
         h1 { font-size: 1.2rem; margin-bottom: 10px; color: #333; padding-right: 80px; }
         p { color: #555; line-height: 1.6; white-space: pre-wrap; margin-bottom: 20px; }
-        
         #step-content { position: relative; }
-        
         #home-btn {
-            position: absolute;
-            top: 0;
-            right: 0;
-            padding: 8px 12px;
-            font-size: 0.85rem;
-            min-height: 40px;
-            width: auto;
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            z-index: 10;
-            cursor: pointer;
+            position: absolute; top: 0; right: 0; padding: 8px 12px;
+            font-size: 0.85rem; min-height: 40px; width: auto;
+            background: #6c757d; color: white; border: none;
+            border-radius: 6px; z-index: 10; cursor: pointer;
         }
-
         .button-container { display: flex; flex-direction: column; gap: 12px; }
         .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        
         button { 
             padding: 15px; border: none; border-radius: 8px; background: #007bff; color: white; 
             font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; 
             flex-direction: column; align-items: center; justify-content: center; text-align: center; 
             min-height: 80px; width: 100%; font-weight: 500;
         }
-        
         button:hover { background: #0056b3; }
         button:active { transform: scale(0.98); }
         button img { width: 32px; height: 32px; margin-bottom: 8px; object-fit: contain; }
         .secondary-btn { background: #6c757d; width: 100%; margin-top: 20px; min-height: 50px; }
+        #return-btn { background: #28a745; }
+        #return-btn:hover { background: #1e7e34; }
     </style>
 </head>
 <body>
 
 <div id="app-container">
     <div id="step-content">
-        <button id="home-btn" style="display: none;">Home</button>
-        <div class="media-box" id="media-container">Media Placeholder</div>
+        <button id="home-btn" style="display: none;">🏠 Home</button>
+        <div class="media-box" id="media-container">Loading...</div>
         <h1 id="step-title">Loading...</h1>
         <p id="step-text">Please wait while we load the instructions.</p>
         <div id="button-group"></div>
+        <button id="return-btn" class="secondary-btn" style="display: none;">↩ Return to Videos</button>
         <button id="back-btn" class="secondary-btn" style="display: none;">← Back</button>
     </div>
 </div>
@@ -78,73 +68,97 @@
         .then(response => response.json())
         .then(data => {
             manualData = data;
-            if(manualData.length > 0) renderStep(manualData[0].step_id);
+            if (manualData.length > 0) renderStep(manualData[0].step_id);
         })
         .catch(err => {
             document.getElementById('step-title').innerText = "Data Not Found";
+            document.getElementById('step-text').innerText = "Could not load manual data. Please try refreshing.";
             console.error(err);
         });
 
     function renderStep(id) {
         const step = manualData.find(s => String(s.step_id) === String(id));
-        if (!step) return;
+        if (!step) { console.warn('Step not found:', id); return; }
 
-        // 1. Analytics & Title Update
         document.title = step.title || "Interactive Manual";
         gtag('event', 'page_view', {
             'page_title': document.title,
             'page_location': window.location.href
         });
-
         stepStartTime = Date.now();
+
         document.getElementById('step-title').innerText = step.title || "Step";
         document.getElementById('step-text').innerText = step.instruction_body || "";
-        
-        // 2. Clear Existing Buttons (CRITICAL FIX)
+
         const btnGroup = document.getElementById('button-group');
-        btnGroup.innerHTML = ''; 
+        btnGroup.innerHTML = '';
         btnGroup.className = (step.screen_type === 'multi_choice') ? 'grid-layout' : 'button-container';
 
-        // 3. Home Button Logic
         const homeBtn = document.getElementById('home-btn');
-        homeBtn.style.display = (id === manualData[0].step_id) ? 'none' : 'block';
-        homeBtn.onclick = () => {
-            historyStack = []; 
-            renderStep(manualData[0].step_id);
-        };
+        homeBtn.style.display = (String(id) === String(manualData[0].step_id)) ? 'none' : 'block';
+        homeBtn.onclick = () => { historyStack = []; renderStep(manualData[0].step_id); };
 
-        // 4. Media Logic (YouTube/Image)
         const mediaBox = document.getElementById('media-container');
-        if (step.youtube_id) {
+        const rawYtId = step.youtube_id ? String(step.youtube_id).split('&')[0].trim() : '';
+
+        if (rawYtId) {
             mediaBox.innerHTML = `
-                <iframe width="100%" height="100%" 
-                src="https://www.youtube.com/embed/${step.youtube_id}?enablejsapi=1&rel=0" 
-                frameborder="0" allowfullscreen></iframe>`;
+                <iframe 
+                    src="https://www.youtube.com/embed/${rawYtId}?rel=0&modestbranding=1" 
+                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen>
+                </iframe>`;
         } else if (step.primary_media) {
-            mediaBox.innerHTML = `<img src="${step.primary_media}">`;
+            mediaBox.innerHTML = `<img src="${step.primary_media}" alt="${step.title || ''}">`;
         } else {
-            mediaBox.innerHTML = 'Visual Placeholder';
+            mediaBox.innerHTML = '<span style="color:#aaa;font-size:0.9rem;">No media for this step</span>';
         }
 
-        // 5. Completion Logic
-        if (step.title.includes("Complete")) {
+        if (step.title && step.title.includes("Complete")) {
             gtag('event', 'manual_completion', {
                 'total_time': Math.round((Date.now() - sessionStartTime) / 1000)
             });
         }
 
-        // 6. Generate New Buttons
         for (let i = 1; i <= 8; i++) {
-            let bText = step[`btn${i}_text`];
-            let bNext = step[`btn${i}_next_id`];
-            let bIcon = step[`btn${i}_image`];
+            const bText = step[`btn${i}_text`];
+            const bNext = step[`btn${i}_next_id`];
+            const bIcon = step[`btn${i}_image`];
             if (bText && bNext) addButton(bText, bNext, id, bIcon);
         }
 
-        // 7. Back Button Logic
+        const returnBtn = document.getElementById('return-btn');
+        if (step.special_action === 'return_to_last' && historyStack.length > 0) {
+            returnBtn.style.display = 'block';
+            returnBtn.onclick = () => {
+                gtag('event', 'manual_navigation', {
+                    'from_step_title': step.title,
+                    'to_step_title': 'Video Library (return)',
+                    'button_label': 'Return to Videos',
+                    'seconds_spent': Math.round((Date.now() - stepStartTime) / 1000)
+                });
+                renderStep(historyStack.pop());
+            };
+        } else {
+            returnBtn.style.display = 'none';
+        }
+
         const backBtn = document.getElementById('back-btn');
-        backBtn.style.display = historyStack.length > 0 ? 'block' : 'none';
-        backBtn.onclick = () => renderStep(historyStack.pop());
+        if (historyStack.length > 0 && step.special_action !== 'return_to_last') {
+            backBtn.style.display = 'block';
+            backBtn.onclick = () => {
+                gtag('event', 'manual_navigation', {
+                    'from_step_title': step.title,
+                    'to_step_title': 'Back',
+                    'button_label': '← Back',
+                    'seconds_spent': Math.round((Date.now() - stepStartTime) / 1000)
+                });
+                renderStep(historyStack.pop());
+            };
+        } else {
+            backBtn.style.display = 'none';
+        }
     }
 
     function addButton(text, nextId, currentId, iconPath) {
@@ -152,6 +166,7 @@
         if (iconPath) {
             const img = document.createElement('img');
             img.src = iconPath;
+            img.alt = '';
             btn.appendChild(img);
         }
         const span = document.createElement('span');
@@ -162,17 +177,16 @@
             const currentTitle = document.getElementById('step-title').innerText;
             const nextStepObj = manualData.find(s => String(s.step_id) === String(nextId));
             const nextTitle = nextStepObj ? nextStepObj.title : "Unknown Step";
-
             gtag('event', 'manual_navigation', {
                 'from_step_title': currentTitle,
                 'to_step_title': nextTitle,
                 'button_label': text,
                 'seconds_spent': Math.round((Date.now() - stepStartTime) / 1000)
             });
-
             historyStack.push(currentId);
             renderStep(nextId);
         };
+
         document.getElementById('button-group').appendChild(btn);
     }
 </script>
