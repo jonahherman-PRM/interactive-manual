@@ -11,7 +11,7 @@
     "btn1_next_id": 1000,
     "btn1_image": "",
     "btn2_text": "RestoreXL",
-    "btn2_next_id": "",
+    "btn2_next_id": 2000,
     "btn2_image": "",
     "btn3_text": "SnipCheck",
     "btn3_next_id": "",
